@@ -1,5 +1,7 @@
 package com.easyhire.controller;
 
+import com.easyhire.dto.LoginRequest;
+import com.easyhire.dto.LoginResponse;
 import com.easyhire.dto.RegisterRequest;
 import com.easyhire.dto.RegisterResponse;
 import com.easyhire.service.AuthService;
@@ -29,5 +31,14 @@ public class AuthController {
         return ResponseEntity
                 .status(201)
                 .body(new RegisterResponse("User registered successfully"));
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(
+            @Valid @RequestBody LoginRequest request) {
+
+        String token = authService.login(request);
+
+        return ResponseEntity.ok(new LoginResponse(token));
     }
 }

@@ -1,5 +1,6 @@
 package com.easyhire.service;
 
+import com.easyhire.dto.LoginRequest;
 import com.easyhire.dto.RegisterRequest;
 import com.easyhire.entity.CandidateProfile;
 import com.easyhire.entity.Role;
@@ -7,6 +8,8 @@ import com.easyhire.entity.User;
 import com.easyhire.exception.EmailAlreadyExistsException;
 import com.easyhire.repository.CandidateProfileRepository;
 import com.easyhire.repository.UserRepository;
+import com.easyhire.security.JwtService;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,13 +22,15 @@ public class AuthService {
     private final UserRepository userRepository;
     private final CandidateProfileRepository candidateProfileRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     public AuthService(UserRepository userRepository,
                        CandidateProfileRepository candidateProfileRepository,
-                       PasswordEncoder passwordEncoder) {
+                       PasswordEncoder passwordEncoder, JwtService jwtService) {
         this.userRepository = userRepository;
         this.candidateProfileRepository = candidateProfileRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     @Transactional
@@ -56,5 +61,17 @@ public class AuthService {
 
             candidateProfileRepository.save(profile);
         }
+    }
+
+    public String login(LoginRequest request) {
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new BadCredentialsException("Invalid credentials");
+        }
+
+        return jwtService.generateToken(user.getId(), user.getRole().name());
     }
 }
