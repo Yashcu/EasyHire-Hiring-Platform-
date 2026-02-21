@@ -2,6 +2,7 @@ package com.easyhire.service;
 
 import com.easyhire.dto.CreateInternshipRequest;
 import com.easyhire.dto.InternshipResponse;
+import com.easyhire.dto.UpdateInternshipStatusRequest;
 import com.easyhire.entity.Internship;
 import com.easyhire.entity.InternshipStatus;
 import com.easyhire.entity.User;
@@ -55,6 +56,39 @@ public class InternshipService {
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    public InternshipResponse updateStatus(UUID recruiterId,
+                                           UUID internshipId,
+                                           UpdateInternshipStatusRequest request) {
+
+        Internship internship = internshipRepository.findById(internshipId)
+                .orElseThrow(() -> new RuntimeException("Internship not found"));
+
+        // Ownership check
+        if (!internship.getRecruiter().getId().equals(recruiterId)) {
+            throw new AccessDeniedException("Not your internship");
+        }
+
+        InternshipStatus current = internship.getStatus();
+        InternshipStatus requested = request.getStatus();
+
+        // Transition rules
+        if (current == InternshipStatus.DRAFT && requested == InternshipStatus.OPEN) {
+            internship.setStatus(InternshipStatus.OPEN);
+
+        } else if (current == InternshipStatus.OPEN && requested == InternshipStatus.CLOSED) {
+            internship.setStatus(InternshipStatus.CLOSED);
+
+        } else {
+            throw new IllegalStateException("Invalid status transition");
+        }
+
+        internship.setUpdatedAt(java.time.LocalDateTime.now());
+
+        Internship saved = internshipRepository.save(internship);
+
+        return mapToResponse(saved);
     }
 
     public InternshipResponse getById(UUID id) {

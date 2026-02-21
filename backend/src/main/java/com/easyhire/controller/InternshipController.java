@@ -2,6 +2,7 @@ package com.easyhire.controller;
 
 import com.easyhire.dto.CreateInternshipRequest;
 import com.easyhire.dto.InternshipResponse;
+import com.easyhire.dto.UpdateInternshipStatusRequest;
 import com.easyhire.service.InternshipService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -57,6 +58,19 @@ public class InternshipController {
 
         return ResponseEntity.ok(
                 internshipService.update(recruiterId, id, request)
+        );
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<InternshipResponse> updateStatus(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateInternshipStatusRequest request,
+            Authentication authentication) {
+
+        UUID recruiterId = (UUID) authentication.getPrincipal();
+
+        return ResponseEntity.ok(
+                internshipService.updateStatus(recruiterId, id, request)
         );
     }
 }
