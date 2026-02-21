@@ -29,7 +29,7 @@ public class RateLimitingFilter implements Filter {
 
         if (requestCounts.get(ip) > MAX_REQUESTS) {
             ((HttpServletResponse) response)
-                    .sendError(HttpServletResponse.SC_TOO_MANY_REQUESTS,
+                    .sendError(429,
                             "Too many requests");
             return;
         }
