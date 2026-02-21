@@ -35,8 +35,17 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/internships/**").hasRole("RECRUITER")
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/internships/**").hasRole("RECRUITER")
+
+                        .requestMatchers(HttpMethod.POST, "/api/v1/internships/*/apply")
+                        .hasRole("CANDIDATE")
+
+                        // Recruiter endpoints
+                        .requestMatchers(HttpMethod.POST, "/api/v1/internships")
+                        .hasRole("RECRUITER")
+
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/internships/**")
+                        .hasRole("RECRUITER")
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
