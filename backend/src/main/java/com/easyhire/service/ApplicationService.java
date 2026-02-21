@@ -2,6 +2,7 @@ package com.easyhire.service;
 
 import com.easyhire.dto.ApplicationResponse;
 import com.easyhire.dto.ApplyRequest;
+import com.easyhire.dto.UpdateApplicationStatusRequest;
 import com.easyhire.entity.*;
 import com.easyhire.repository.*;
 import org.springframework.data.domain.Page;
@@ -117,5 +118,58 @@ public class ApplicationService {
                     response.setAppliedAt(app.getAppliedAt());
                     return response;
                 });
+    }
+    @Transactional
+    public void updateStatus(UUID recruiterId,
+                             UUID applicationId,
+                             UpdateApplicationStatusRequest request) {
+
+        Application application = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new RuntimeException("Application not found"));
+
+        Internship internship = application.getInternship();
+
+        // Ownership check
+        if (!internship.getRecruiter().getId().equals(recruiterId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Not your internship");
+        }
+
+        ApplicationStatus current = application.getStatus();
+        ApplicationStatus requested = request.getStatus();
+
+        // Transition validation
+        boolean valid = false;
+
+        if (current == ApplicationStatus.APPLIED &&
+                (requested == ApplicationStatus.SHORTLISTED ||
+                        requested == ApplicationStatus.REJECTED)) {
+            valid = true;
+        }
+
+        if (current == ApplicationStatus.SHORTLISTED &&
+                requested == ApplicationStatus.REJECTED) {
+            valid = true;
+        }
+
+        if (!valid) {
+            throw new IllegalStateException("Invalid status transition");
+        }
+
+        application.setStatus(requested);
+        application.setUpdatedAt(java.time.LocalDateTime.now());
+
+        applicationRepository.save(application);
+
+        User recruiter = userRepository.findById(recruiterId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        ApplicationStatusHistory history = new ApplicationStatusHistory();
+        history.setApplication(application);
+        history.setPreviousStatus(current.name());
+        history.setNewStatus(requested.name());
+        history.setChangedBy(recruiter);
+        history.setChangedAt(java.time.LocalDateTime.now());
+
+        historyRepository.save(history);
     }
 }
