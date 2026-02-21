@@ -39,11 +39,17 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/internships/*/apply")
                         .hasRole("CANDIDATE")
 
+                        .requestMatchers(HttpMethod.GET, "/api/v1/applications/me")
+                        .hasRole("CANDIDATE")
+
                         // Recruiter endpoints
                         .requestMatchers(HttpMethod.POST, "/api/v1/internships")
                         .hasRole("RECRUITER")
 
                         .requestMatchers(HttpMethod.PUT, "/api/v1/internships/**")
+                        .hasRole("RECRUITER")
+
+                        .requestMatchers(HttpMethod.GET, "/api/v1/internships/*/applications")
                         .hasRole("RECRUITER")
 
                         .anyRequest().authenticated()
