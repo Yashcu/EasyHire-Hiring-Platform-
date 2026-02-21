@@ -13,9 +13,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/v1/internships")
+@Tag(name = "Internships")
 public class InternshipController {
 
     private final InternshipService internshipService;
