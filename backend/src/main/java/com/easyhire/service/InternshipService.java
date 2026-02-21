@@ -5,16 +5,21 @@ import com.easyhire.dto.InternshipResponse;
 import com.easyhire.dto.UpdateInternshipStatusRequest;
 import com.easyhire.entity.Internship;
 import com.easyhire.entity.InternshipStatus;
+import com.easyhire.entity.InternshipType;
 import com.easyhire.entity.User;
 import com.easyhire.repository.InternshipRepository;
 import com.easyhire.repository.UserRepository;
+import com.easyhire.specification.InternshipSpecification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class InternshipService {
@@ -50,12 +55,31 @@ public class InternshipService {
         return mapToResponse(saved);
     }
 
-    public List<InternshipResponse> getOpenInternships() {
+    public Page<InternshipResponse> search(
+            String keyword,
+            InternshipStatus status,
+            InternshipType type,
+            String location,
+            int page,
+            int size,
+            String sortBy,
+            String direction
+    ) {
 
-        return internshipRepository.findByStatus(InternshipStatus.OPEN)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        Sort sort = direction.equalsIgnoreCase("desc") ?
+                Sort.by(sortBy).descending() :
+                Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Specification<Internship> spec = Specification
+                .where(InternshipSpecification.titleContains(keyword))
+                .and(InternshipSpecification.hasStatus(status))
+                .and(InternshipSpecification.hasType(type))
+                .and(InternshipSpecification.hasLocation(location));
+
+        return internshipRepository.findAll(spec, pageable)
+                .map(this::mapToResponse);
     }
 
     public InternshipResponse updateStatus(UUID recruiterId,

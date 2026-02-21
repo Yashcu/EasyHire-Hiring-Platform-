@@ -35,6 +35,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/internships/**").permitAll()
 
                         .requestMatchers(HttpMethod.POST, "/api/v1/internships/*/apply")
                         .hasRole("CANDIDATE")
@@ -54,6 +55,7 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/applications/*/status")
                         .hasRole("RECRUITER")
+
 
                         .anyRequest().authenticated()
                 )

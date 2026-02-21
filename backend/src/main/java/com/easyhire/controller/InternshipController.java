@@ -3,6 +3,8 @@ package com.easyhire.controller;
 import com.easyhire.dto.CreateInternshipRequest;
 import com.easyhire.dto.InternshipResponse;
 import com.easyhire.dto.UpdateInternshipStatusRequest;
+import com.easyhire.entity.InternshipStatus;
+import com.easyhire.entity.InternshipType;
 import com.easyhire.service.InternshipService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -36,9 +38,29 @@ public class InternshipController {
     }
 
     @GetMapping
-    public ResponseEntity<List<InternshipResponse>> getOpen() {
+    public ResponseEntity<?> search(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) InternshipStatus status,
+            @RequestParam(required = false) InternshipType type,
+            @RequestParam(required = false) String location,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction
+    ) {
 
-        return ResponseEntity.ok(internshipService.getOpenInternships());
+        return ResponseEntity.ok(
+                internshipService.search(
+                        keyword,
+                        status,
+                        type,
+                        location,
+                        page,
+                        size,
+                        sortBy,
+                        direction
+                )
+        );
     }
 
     @GetMapping("/{id}")
