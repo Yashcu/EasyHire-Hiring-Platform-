@@ -35,25 +35,19 @@ public class AuthService {
 
     @Transactional
     public void register(RegisterRequest request) {
-        // 1. Normalize the email (lowercase and remove extra spaces)
         String normalizedEmail = request.getEmail().toLowerCase().trim();
 
-        // 2. Check duplicate email using the normalized version
         if (userRepository.findByEmail(normalizedEmail).isPresent()) {
             throw new EmailAlreadyExistsException("Email already exists");
         }
 
-        // 3. Create user
         User user = new User();
         user.setEmail(normalizedEmail);
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setRole(request.getRole());
-        user.setCreatedAt(LocalDateTime.now());
-        user.setUpdatedAt(LocalDateTime.now());
 
         User savedUser = userRepository.save(user);
 
-        // 4. If candidate → create profile
         if (request.getRole() == Role.CANDIDATE) {
             CandidateProfile profile = new CandidateProfile();
             profile.setUser(savedUser);
@@ -66,7 +60,6 @@ public class AuthService {
     }
 
     public String login(LoginRequest request) {
-        // 1. Normalize the email before searching the database
         String normalizedEmail = request.getEmail().toLowerCase().trim();
 
         User user = userRepository.findByEmail(normalizedEmail)

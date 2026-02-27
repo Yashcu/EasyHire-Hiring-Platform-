@@ -2,7 +2,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/easyhire
     username: postgres
-    password: yash
+    password: ${DB_PASSWORD:yash}
 
   jpa:
     hibernate:
@@ -19,5 +19,5 @@ server:
   port: 8080
 
 jwt:
-  secret: your-very-secure-secret-key-1234567890
+  secret: ${JWT_SECRET:your-very-secure-secret-key-1234567890}
   expiration: 86400000

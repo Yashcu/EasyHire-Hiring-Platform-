@@ -4,6 +4,8 @@ import com.easyhire.dto.ApplicationResponse;
 import com.easyhire.dto.ApplyRequest;
 import com.easyhire.dto.UpdateApplicationStatusRequest;
 import com.easyhire.entity.*;
+import com.easyhire.exception.BadRequestException;
+import com.easyhire.exception.ResourceNotFoundException;
 import com.easyhire.repository.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,7 +29,8 @@ public class ApplicationService {
     public ApplicationService(ApplicationRepository applicationRepository,
                               InternshipRepository internshipRepository,
                               UserRepository userRepository,
-                              ApplicationStatusHistoryRepository historyRepository, CandidateProfileRepository candidateProfileRepository) {
+                              ApplicationStatusHistoryRepository historyRepository,
+                              CandidateProfileRepository candidateProfileRepository) {
         this.applicationRepository = applicationRepository;
         this.internshipRepository = internshipRepository;
         this.userRepository = userRepository;
@@ -39,34 +42,34 @@ public class ApplicationService {
     public void apply(UUID candidateId, UUID internshipId, ApplyRequest request) {
 
         User candidate = userRepository.findById(candidateId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User", candidateId));
 
         if (candidate.getRole() != Role.CANDIDATE) {
             throw new AccessDeniedException("Only candidates can apply");
         }
 
         Internship internship = internshipRepository.findById(internshipId)
-                .orElseThrow(() -> new RuntimeException("Internship not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Internship", internshipId));
 
         if (internship.getStatus() != InternshipStatus.OPEN) {
-            throw new IllegalStateException("Internship is not open for applications");
+            throw new BadRequestException("Internship is not open for applications");
         }
 
         if (applicationRepository
                 .findByCandidateIdAndInternshipId(candidateId, internshipId)
                 .isPresent()) {
-            throw new IllegalStateException("You have already applied");
+            throw new BadRequestException("You have already applied");
         }
 
         CandidateProfile profile = candidateProfileRepository.findById(candidateId)
-                .orElseThrow(() -> new RuntimeException("Profile not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Profile", candidateId));
 
         String resumeToUse = (request.getResumeUrl() != null && !request.getResumeUrl().isBlank())
                 ? request.getResumeUrl()
                 : profile.getDefaultResumeUrl();
 
         if (resumeToUse == null || resumeToUse.isBlank()) {
-            throw new IllegalStateException("No resume provided and no default resume found in profile");
+            throw new BadRequestException("No resume provided and no default resume found in profile");
         }
 
         Application application = new Application();
@@ -95,15 +98,7 @@ public class ApplicationService {
 
         return applicationRepository
                 .findByCandidateId(candidateId, pageable)
-                .map(app -> {
-                    ApplicationResponse response = new ApplicationResponse();
-                    response.setApplicationId(app.getId());
-                    response.setInternshipId(app.getInternship().getId());
-                    response.setInternshipTitle(app.getInternship().getTitle());
-                    response.setStatus(app.getStatus());
-                    response.setAppliedAt(app.getAppliedAt());
-                    return response;
-                });
+                .map(this::mapToResponse);
     }
 
     public Page<ApplicationResponse> getApplicants(UUID recruiterId,
@@ -112,10 +107,10 @@ public class ApplicationService {
                                                    int size) {
 
         Internship internship = internshipRepository.findById(internshipId)
-                .orElseThrow(() -> new RuntimeException("Internship not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Internship", internshipId));
 
         if (!internship.getRecruiter().getId().equals(recruiterId)) {
-            throw new org.springframework.security.access.AccessDeniedException("Not your internship");
+            throw new AccessDeniedException("Not your internship");
         }
 
         Pageable pageable = PageRequest.of(page, size);
@@ -123,60 +118,53 @@ public class ApplicationService {
         return applicationRepository
                 .findByInternshipId(internshipId, pageable)
                 .map(app -> {
-                    ApplicationResponse response = new ApplicationResponse();
-                    response.setApplicationId(app.getId());
-                    response.setInternshipId(app.getInternship().getId());
-                    response.setInternshipTitle(app.getInternship().getTitle());
+                    ApplicationResponse response = mapToResponse(app);
                     response.setCandidateEmail(app.getCandidate().getEmail());
                     response.setResumeUrl(app.getAppliedResumeUrl());
 
-                    // Fetch candidate profile to get the name (if it exists)
                     candidateProfileRepository.findById(app.getCandidate().getId())
                         .ifPresent(profile -> response.setCandidateName(
                             profile.getFirstName() + " " + profile.getLastName()));
 
-                    response.setStatus(app.getStatus());
-                    response.setAppliedAt(app.getAppliedAt());
                     return response;
                 });
     }
+
     @Transactional
     public void updateStatus(UUID recruiterId,
                              UUID applicationId,
                              UpdateApplicationStatusRequest request) {
 
         Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new RuntimeException("Application not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Application", applicationId));
 
         Internship internship = application.getInternship();
 
-        // Ownership check
-        if (!internship.getRecruiter().getId().toString().equals(recruiterId.toString())) {
-            throw new org.springframework.security.access.AccessDeniedException("Not your internship");
+        if (!internship.getRecruiter().getId().equals(recruiterId)) {
+            throw new AccessDeniedException("Not your internship");
         }
 
         ApplicationStatus current = application.getStatus();
         ApplicationStatus next = request.getStatus();
 
-        // Transition validation
         boolean isTransitionValid = switch (current) {
             case APPLIED -> (next == ApplicationStatus.IN_REVIEW || next == ApplicationStatus.REJECTED);
             case IN_REVIEW -> (next == ApplicationStatus.SHORTLISTED || next == ApplicationStatus.REJECTED);
             case SHORTLISTED -> (next == ApplicationStatus.OFFERED || next == ApplicationStatus.REJECTED);
-            case OFFERED, REJECTED -> false; // Terminal states
+            case OFFERED, REJECTED -> false;
         };
 
         if (!isTransitionValid) {
-            throw new IllegalStateException("Invalid status transition from " + current + " to " + next);
+            throw new BadRequestException("Invalid status transition from " + current + " to " + next);
         }
 
         application.setStatus(next);
-        application.setUpdatedAt(java.time.LocalDateTime.now());
+        application.setUpdatedAt(LocalDateTime.now());
 
         applicationRepository.save(application);
 
         User recruiter = userRepository.findById(recruiterId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User", recruiterId));
 
         ApplicationStatusHistory history = new ApplicationStatusHistory();
         history.setApplication(application);
@@ -185,5 +173,15 @@ public class ApplicationService {
         history.setChangedBy(recruiter);
         history.setChangedAt(LocalDateTime.now());
         historyRepository.save(history);
+    }
+
+    private ApplicationResponse mapToResponse(Application app) {
+        ApplicationResponse response = new ApplicationResponse();
+        response.setApplicationId(app.getId());
+        response.setInternshipId(app.getInternship().getId());
+        response.setInternshipTitle(app.getInternship().getTitle());
+        response.setStatus(app.getStatus());
+        response.setAppliedAt(app.getAppliedAt());
+        return response;
     }
 }

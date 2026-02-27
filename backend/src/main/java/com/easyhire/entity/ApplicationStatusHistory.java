@@ -13,7 +13,7 @@ public class ApplicationStatusHistory {
     @GeneratedValue
     private UUID id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "application_id", nullable = false)
     private Application application;
 
@@ -23,7 +23,7 @@ public class ApplicationStatusHistory {
     @Column(name = "new_status", nullable = false)
     private String newStatus;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "changed_by")
     private User changedBy;
 

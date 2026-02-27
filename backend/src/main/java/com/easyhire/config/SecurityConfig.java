@@ -1,7 +1,7 @@
 package com.easyhire.config;
 
+import com.easyhire.security.CustomAuthenticationEntryPoint;
 import com.easyhire.security.JwtAuthenticationFilter;
-import com.easyhire.security.RateLimitingFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -15,17 +15,17 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
-import java.util.List;
 
 @Configuration
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtFilter;
-    private final RateLimitingFilter rateLimitingFilter;
+    private final CustomAuthenticationEntryPoint authenticationEntryPoint;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtFilter, RateLimitingFilter rateLimitingFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtFilter,
+                          CustomAuthenticationEntryPoint authenticationEntryPoint) {
         this.jwtFilter = jwtFilter;
-        this.rateLimitingFilter = rateLimitingFilter;
+        this.authenticationEntryPoint = authenticationEntryPoint;
     }
 
     @Bean
@@ -41,7 +41,7 @@ public class SecurityConfig {
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
-        
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
@@ -56,9 +56,12 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/v1/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/api/v1/test").permitAll()
+                        .requestMatchers("/api/v1/auth/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/internships/**").permitAll()
 
@@ -83,11 +86,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/applications/*/status")
                         .hasRole("RECRUITER")
 
-
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(rateLimitingFilter, JwtAuthenticationFilter.class);
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

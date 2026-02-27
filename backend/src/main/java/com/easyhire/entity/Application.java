@@ -13,11 +13,11 @@ public class Application {
     @GeneratedValue
     private UUID id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "candidate_id", nullable = false)
     private User candidate;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "internship_id", nullable = false)
     private Internship internship;
 

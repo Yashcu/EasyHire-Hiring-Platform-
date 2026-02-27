@@ -4,6 +4,7 @@ import com.easyhire.dto.CreateInternshipRequest;
 import com.easyhire.dto.InternshipResponse;
 import com.easyhire.dto.UpdateInternshipStatusRequest;
 import com.easyhire.entity.*;
+import com.easyhire.exception.ResourceNotFoundException;
 import com.easyhire.repository.CompanyRepository;
 import com.easyhire.repository.InternshipRepository;
 import com.easyhire.repository.UserRepository;
@@ -29,7 +30,8 @@ public class InternshipService {
     private final CompanyRepository companyRepository;
 
     public InternshipService(InternshipRepository internshipRepository,
-                             UserRepository userRepository, CompanyRepository companyRepository) {
+                             UserRepository userRepository,
+                             CompanyRepository companyRepository) {
         this.internshipRepository = internshipRepository;
         this.userRepository = userRepository;
         this.companyRepository = companyRepository;
@@ -38,15 +40,17 @@ public class InternshipService {
     public InternshipResponse create(UUID recruiterId, CreateInternshipRequest request) {
 
         User recruiter = userRepository.findById(recruiterId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User", recruiterId));
 
         Internship internship = new Internship();
         internship.setRecruiter(recruiter);
+
         if (request.getCompanyId() != null) {
             Company company = companyRepository.findById(request.getCompanyId())
-                    .orElseThrow(() -> new RuntimeException("Company not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Company", request.getCompanyId()));
             internship.setCompany(company);
         }
+
         internship.setTitle(request.getTitle());
         internship.setDescription(request.getDescription());
         internship.setLocation(request.getLocation());
@@ -98,20 +102,14 @@ public class InternshipService {
                                            UpdateInternshipStatusRequest request) {
 
         Internship internship = internshipRepository.findById(internshipId)
-                .orElseThrow(() -> new RuntimeException("Internship not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Internship", internshipId));
 
-        // Ownership check
         if (!internship.getRecruiter().getId().equals(recruiterId)) {
             throw new AccessDeniedException("Not your internship");
         }
 
-        InternshipStatus current = internship.getStatus();
-        InternshipStatus requested = request.getStatus();
-
-        // Allow any state transition for the MVP
-        internship.setStatus(requested);
-
-        internship.setUpdatedAt(java.time.LocalDateTime.now());
+        internship.setStatus(request.getStatus());
+        internship.setUpdatedAt(LocalDateTime.now());
 
         Internship saved = internshipRepository.save(internship);
 
@@ -121,7 +119,7 @@ public class InternshipService {
     public InternshipResponse getById(UUID id) {
 
         Internship internship = internshipRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Internship not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Internship", id));
 
         return mapToResponse(internship);
     }
@@ -131,7 +129,7 @@ public class InternshipService {
                                      CreateInternshipRequest request) {
 
         Internship internship = internshipRepository.findById(internshipId)
-                .orElseThrow(() -> new RuntimeException("Internship not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Internship", internshipId));
 
         if (!internship.getRecruiter().getId().equals(recruiterId)) {
             throw new AccessDeniedException("Not your internship");
@@ -161,6 +159,7 @@ public class InternshipService {
         response.setStipendMax(internship.getStipendMax());
         response.setType(internship.getType());
         response.setStatus(internship.getStatus());
+
         if (internship.getCompany() != null) {
             response.setCompanyId(internship.getCompany().getId());
             response.setCompanyName(internship.getCompany().getName());

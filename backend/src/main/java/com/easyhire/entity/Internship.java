@@ -14,7 +14,7 @@ public class Internship {
     @GeneratedValue
     private UUID id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recruiter_id", nullable = false)
     private User recruiter;
 
@@ -65,6 +65,14 @@ public class Internship {
 
     public void setRecruiter(User recruiter) {
         this.recruiter = recruiter;
+    }
+
+    public Company getCompany() {
+        return company;
+    }
+
+    public void setCompany(Company company) {
+        this.company = company;
     }
 
     public String getTitle() {
@@ -137,13 +145,5 @@ public class Internship {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
-    }
-
-    public Company getCompany(){
-        return company;
-    }
-
-    public void setCompany(Company company){
-        this.company = company;
     }
 }

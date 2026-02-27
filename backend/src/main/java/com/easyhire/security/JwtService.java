@@ -1,8 +1,8 @@
 package com.easyhire.security;
 
+import com.easyhire.config.JwtProperties;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
@@ -15,12 +15,9 @@ public class JwtService {
     private final Key key;
     private final long expiration;
 
-    public JwtService(
-            @Value("${jwt.secret}") String secret,
-            @Value("${jwt.expiration}") long expiration
-    ) {
-        this.key = Keys.hmacShaKeyFor(secret.getBytes());
-        this.expiration = expiration;
+    public JwtService(JwtProperties jwtProperties) {
+        this.key = Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes());
+        this.expiration = jwtProperties.getExpiration();
     }
 
     public String generateToken(UUID userId, String role) {

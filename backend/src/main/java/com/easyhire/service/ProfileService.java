@@ -2,13 +2,17 @@ package com.easyhire.service;
 
 import com.easyhire.dto.UpdateProfileRequest;
 import com.easyhire.entity.CandidateProfile;
+import com.easyhire.exception.ResourceNotFoundException;
 import com.easyhire.repository.CandidateProfileRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
 public class ProfileService {
+
     private final CandidateProfileRepository profileRepository;
 
     public ProfileService(CandidateProfileRepository profileRepository) {
@@ -17,7 +21,7 @@ public class ProfileService {
 
     public CandidateProfile getProfile(UUID userId) {
         return profileRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Profile not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Profile", userId));
     }
 
     @Transactional
@@ -32,7 +36,7 @@ public class ProfileService {
         profile.setPortfolioUrl(request.getPortfolioUrl());
         profile.setGithubUrl(request.getGithubUrl());
         profile.setDefaultResumeUrl(request.getDefaultResumeUrl());
-        profile.setUpdatedAt(java.time.LocalDateTime.now());
+        profile.setUpdatedAt(LocalDateTime.now());
 
         profileRepository.save(profile);
     }
