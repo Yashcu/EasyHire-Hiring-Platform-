@@ -1,5 +1,6 @@
 package com.easyhire.service;
 
+import com.easyhire.dto.ProfileResponse;
 import com.easyhire.dto.UpdateProfileRequest;
 import com.easyhire.entity.CandidateProfile;
 import com.easyhire.exception.ResourceNotFoundException;
@@ -19,14 +20,28 @@ public class ProfileService {
         this.profileRepository = profileRepository;
     }
 
-    public CandidateProfile getProfile(UUID userId) {
-        return profileRepository.findById(userId)
+    @Transactional(readOnly = true)
+    public ProfileResponse getProfile(UUID userId) {
+        CandidateProfile profile = profileRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Profile", userId));
+
+        return new ProfileResponse(
+                profile.getFirstName(),
+                profile.getLastName(),
+                profile.getUniversity(),
+                profile.getBio(),
+                profile.getSkills(),
+                profile.getPortfolioUrl(),
+                profile.getGithubUrl(),
+                profile.getDefaultResumeUrl(),
+                profile.getUpdatedAt()
+        );
     }
 
     @Transactional
     public void updateProfile(UUID userId, UpdateProfileRequest request) {
-        CandidateProfile profile = getProfile(userId);
+        CandidateProfile profile = profileRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Profile", userId));
 
         profile.setFirstName(request.getFirstName());
         profile.setLastName(request.getLastName());

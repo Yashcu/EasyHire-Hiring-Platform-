@@ -1,10 +1,7 @@
 package com.easyhire.dto;
 
-import jakarta.validation.constraints.NotBlank;
-
 public class ApplyRequest {
 
-    @NotBlank
     private String resumeUrl;
 
     public String getResumeUrl() {

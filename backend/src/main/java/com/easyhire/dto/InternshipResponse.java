@@ -16,34 +16,9 @@ public class InternshipResponse {
     private BigDecimal stipendMax;
     private InternshipType type;
     private InternshipStatus status;
-    private String companyName;
-
-    public String getCompanyName() {
-        return companyName;
-    }
-
-    public void setCompanyName(String companyName) {
-        this.companyName = companyName;
-    }
-
-    public String getCompanyLogoUrl() {
-        return companyLogoUrl;
-    }
-
-    public void setCompanyLogoUrl(String companyLogoUrl) {
-        this.companyLogoUrl = companyLogoUrl;
-    }
-
-    public UUID getCompanyId() {
-        return companyId;
-    }
-
-    public void setCompanyId(UUID companyId) {
-        this.companyId = companyId;
-    }
-
-    private String companyLogoUrl;
     private UUID companyId;
+    private String companyName;
+    private String companyLogoUrl;
 
     public UUID getId() {
         return id;
@@ -107,5 +82,29 @@ public class InternshipResponse {
 
     public void setStatus(InternshipStatus status) {
         this.status = status;
+    }
+
+    public UUID getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(UUID companyId) {
+        this.companyId = companyId;
+    }
+
+    public String getCompanyName() {
+        return companyName;
+    }
+
+    public void setCompanyName(String companyName) {
+        this.companyName = companyName;
+    }
+
+    public String getCompanyLogoUrl() {
+        return companyLogoUrl;
+    }
+
+    public void setCompanyLogoUrl(String companyLogoUrl) {
+        this.companyLogoUrl = companyLogoUrl;
     }
 }

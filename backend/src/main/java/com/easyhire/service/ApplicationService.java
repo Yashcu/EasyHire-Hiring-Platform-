@@ -92,6 +92,7 @@ public class ApplicationService {
         historyRepository.save(history);
     }
 
+    @Transactional(readOnly = true)
     public Page<ApplicationResponse> getMyApplications(UUID candidateId, int page, int size) {
 
         Pageable pageable = PageRequest.of(page, size);
@@ -101,6 +102,7 @@ public class ApplicationService {
                 .map(this::mapToResponse);
     }
 
+    @Transactional(readOnly = true)
     public Page<ApplicationResponse> getApplicants(UUID recruiterId,
                                                    UUID internshipId,
                                                    int page,

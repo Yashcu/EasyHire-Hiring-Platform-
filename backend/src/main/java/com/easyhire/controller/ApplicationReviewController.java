@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.UUID;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -22,7 +23,7 @@ public class ApplicationReviewController {
     }
 
     @PatchMapping("/{id}/status")
-    public ResponseEntity<?> updateStatus(
+    public ResponseEntity<Map<String, String>> updateStatus(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateApplicationStatusRequest request,
             Authentication authentication) {
@@ -31,6 +32,6 @@ public class ApplicationReviewController {
 
         applicationService.updateStatus(recruiterId, id, request);
 
-        return ResponseEntity.ok("Application status updated");
+        return ResponseEntity.ok(Map.of("message", "Application status updated"));
     }
 }

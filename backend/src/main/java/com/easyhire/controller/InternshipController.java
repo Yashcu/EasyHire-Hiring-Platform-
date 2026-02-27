@@ -7,6 +7,7 @@ import com.easyhire.entity.InternshipStatus;
 import com.easyhire.entity.InternshipType;
 import com.easyhire.service.InternshipService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -41,7 +42,7 @@ public class InternshipController {
     }
 
     @GetMapping
-    public ResponseEntity<?> search(
+    public ResponseEntity<Page<InternshipResponse>> search(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) List<InternshipStatus> status,
             @RequestParam(required = false) InternshipType type,

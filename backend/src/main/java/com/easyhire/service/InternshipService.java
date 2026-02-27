@@ -11,6 +11,7 @@ import com.easyhire.repository.UserRepository;
 import com.easyhire.specification.InternshipSpecification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
@@ -66,6 +67,7 @@ public class InternshipService {
         return mapToResponse(saved);
     }
 
+    @Transactional(readOnly = true)
     public Page<InternshipResponse> search(
             String keyword,
             List<InternshipStatus> status,
@@ -116,6 +118,7 @@ public class InternshipService {
         return mapToResponse(saved);
     }
 
+    @Transactional(readOnly = true)
     public InternshipResponse getById(UUID id) {
 
         Internship internship = internshipRepository.findById(id)

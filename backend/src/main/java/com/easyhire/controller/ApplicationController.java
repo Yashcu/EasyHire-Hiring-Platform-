@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.UUID;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -22,7 +23,7 @@ public class ApplicationController {
     }
 
     @PostMapping("/{id}/apply")
-    public ResponseEntity<?> apply(
+    public ResponseEntity<Map<String, String>> apply(
             @PathVariable UUID id,
             @Valid @RequestBody ApplyRequest request,
             Authentication authentication) {
@@ -31,6 +32,6 @@ public class ApplicationController {
 
         applicationService.apply(candidateId, id, request);
 
-        return ResponseEntity.status(201).body("Application submitted");
+        return ResponseEntity.status(201).body(Map.of("message", "Application submitted"));
     }
 }

@@ -1,7 +1,7 @@
 package com.easyhire.controller;
 
+import com.easyhire.dto.ProfileResponse;
 import com.easyhire.dto.UpdateProfileRequest;
-import com.easyhire.entity.CandidateProfile;
 import com.easyhire.service.ProfileService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +12,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/profile")
 public class ProfileController {
+
     private final ProfileService profileService;
 
     public ProfileController(ProfileService profileService) {
@@ -19,7 +20,7 @@ public class ProfileController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<CandidateProfile> getMyProfile(Authentication auth) {
+    public ResponseEntity<ProfileResponse> getMyProfile(Authentication auth) {
         UUID userId = (UUID) auth.getPrincipal();
         return ResponseEntity.ok(profileService.getProfile(userId));
     }
