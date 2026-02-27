@@ -3,10 +3,8 @@ package com.easyhire.service;
 import com.easyhire.dto.CreateInternshipRequest;
 import com.easyhire.dto.InternshipResponse;
 import com.easyhire.dto.UpdateInternshipStatusRequest;
-import com.easyhire.entity.Internship;
-import com.easyhire.entity.InternshipStatus;
-import com.easyhire.entity.InternshipType;
-import com.easyhire.entity.User;
+import com.easyhire.entity.*;
+import com.easyhire.repository.CompanyRepository;
 import com.easyhire.repository.InternshipRepository;
 import com.easyhire.repository.UserRepository;
 import com.easyhire.specification.InternshipSpecification;
@@ -18,7 +16,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -26,11 +26,13 @@ public class InternshipService {
 
     private final InternshipRepository internshipRepository;
     private final UserRepository userRepository;
+    private final CompanyRepository companyRepository;
 
     public InternshipService(InternshipRepository internshipRepository,
-                             UserRepository userRepository) {
+                             UserRepository userRepository, CompanyRepository companyRepository) {
         this.internshipRepository = internshipRepository;
         this.userRepository = userRepository;
+        this.companyRepository = companyRepository;
     }
 
     public InternshipResponse create(UUID recruiterId, CreateInternshipRequest request) {
@@ -40,6 +42,11 @@ public class InternshipService {
 
         Internship internship = new Internship();
         internship.setRecruiter(recruiter);
+        if (request.getCompanyId() != null) {
+            Company company = companyRepository.findById(request.getCompanyId())
+                    .orElseThrow(() -> new RuntimeException("Company not found"));
+            internship.setCompany(company);
+        }
         internship.setTitle(request.getTitle());
         internship.setDescription(request.getDescription());
         internship.setLocation(request.getLocation());
@@ -57,9 +64,11 @@ public class InternshipService {
 
     public Page<InternshipResponse> search(
             String keyword,
-            InternshipStatus status,
+            List<InternshipStatus> status,
             InternshipType type,
             String location,
+            BigDecimal minStipend,
+            BigDecimal maxStipend,
             int page,
             int size,
             String sortBy,
@@ -76,7 +85,9 @@ public class InternshipService {
                 .where(InternshipSpecification.titleContains(keyword))
                 .and(InternshipSpecification.hasStatus(status))
                 .and(InternshipSpecification.hasType(type))
-                .and(InternshipSpecification.hasLocation(location));
+                .and(InternshipSpecification.hasLocation(location))
+                .and(InternshipSpecification.hasStipendGreaterEqual(minStipend))
+                .and(InternshipSpecification.hasStipendLessEqual(maxStipend));
 
         return internshipRepository.findAll(spec, pageable)
                 .map(this::mapToResponse);
@@ -97,16 +108,8 @@ public class InternshipService {
         InternshipStatus current = internship.getStatus();
         InternshipStatus requested = request.getStatus();
 
-        // Transition rules
-        if (current == InternshipStatus.DRAFT && requested == InternshipStatus.OPEN) {
-            internship.setStatus(InternshipStatus.OPEN);
-
-        } else if (current == InternshipStatus.OPEN && requested == InternshipStatus.CLOSED) {
-            internship.setStatus(InternshipStatus.CLOSED);
-
-        } else {
-            throw new IllegalStateException("Invalid status transition");
-        }
+        // Allow any state transition for the MVP
+        internship.setStatus(requested);
 
         internship.setUpdatedAt(java.time.LocalDateTime.now());
 
@@ -158,6 +161,11 @@ public class InternshipService {
         response.setStipendMax(internship.getStipendMax());
         response.setType(internship.getType());
         response.setStatus(internship.getStatus());
+        if (internship.getCompany() != null) {
+            response.setCompanyId(internship.getCompany().getId());
+            response.setCompanyName(internship.getCompany().getName());
+            response.setCompanyLogoUrl(internship.getCompany().getLogoUrl());
+        }
 
         return response;
     }

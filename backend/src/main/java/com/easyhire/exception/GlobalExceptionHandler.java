@@ -70,4 +70,18 @@ public class GlobalExceptionHandler {
                         request.getRequestURI()
                 ));
     }
+
+    @ExceptionHandler(jakarta.persistence.EntityNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotFound(
+            jakarta.persistence.EntityNotFoundException ex,
+            HttpServletRequest request) {
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(
+                        404,
+                        "Not Found",
+                        ex.getMessage(),
+                        request.getRequestURI()
+                ));
+    }
 }

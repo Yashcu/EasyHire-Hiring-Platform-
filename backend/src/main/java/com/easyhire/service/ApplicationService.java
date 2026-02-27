@@ -22,15 +22,17 @@ public class ApplicationService {
     private final InternshipRepository internshipRepository;
     private final UserRepository userRepository;
     private final ApplicationStatusHistoryRepository historyRepository;
+    private final CandidateProfileRepository candidateProfileRepository;
 
     public ApplicationService(ApplicationRepository applicationRepository,
                               InternshipRepository internshipRepository,
                               UserRepository userRepository,
-                              ApplicationStatusHistoryRepository historyRepository) {
+                              ApplicationStatusHistoryRepository historyRepository, CandidateProfileRepository candidateProfileRepository) {
         this.applicationRepository = applicationRepository;
         this.internshipRepository = internshipRepository;
         this.userRepository = userRepository;
         this.historyRepository = historyRepository;
+        this.candidateProfileRepository = candidateProfileRepository;
     }
 
     @Transactional
@@ -56,11 +58,22 @@ public class ApplicationService {
             throw new IllegalStateException("You have already applied");
         }
 
+        CandidateProfile profile = candidateProfileRepository.findById(candidateId)
+                .orElseThrow(() -> new RuntimeException("Profile not found"));
+
+        String resumeToUse = (request.getResumeUrl() != null && !request.getResumeUrl().isBlank())
+                ? request.getResumeUrl()
+                : profile.getDefaultResumeUrl();
+
+        if (resumeToUse == null || resumeToUse.isBlank()) {
+            throw new IllegalStateException("No resume provided and no default resume found in profile");
+        }
+
         Application application = new Application();
         application.setCandidate(candidate);
         application.setInternship(internship);
         application.setStatus(ApplicationStatus.APPLIED);
-        application.setAppliedResumeUrl(request.getResumeUrl());
+        application.setAppliedResumeUrl(resumeToUse);
         application.setAppliedAt(LocalDateTime.now());
         application.setUpdatedAt(LocalDateTime.now());
 
@@ -114,6 +127,14 @@ public class ApplicationService {
                     response.setApplicationId(app.getId());
                     response.setInternshipId(app.getInternship().getId());
                     response.setInternshipTitle(app.getInternship().getTitle());
+                    response.setCandidateEmail(app.getCandidate().getEmail());
+                    response.setResumeUrl(app.getAppliedResumeUrl());
+
+                    // Fetch candidate profile to get the name (if it exists)
+                    candidateProfileRepository.findById(app.getCandidate().getId())
+                        .ifPresent(profile -> response.setCandidateName(
+                            profile.getFirstName() + " " + profile.getLastName()));
+
                     response.setStatus(app.getStatus());
                     response.setAppliedAt(app.getAppliedAt());
                     return response;
@@ -130,32 +151,26 @@ public class ApplicationService {
         Internship internship = application.getInternship();
 
         // Ownership check
-        if (!internship.getRecruiter().getId().equals(recruiterId)) {
+        if (!internship.getRecruiter().getId().toString().equals(recruiterId.toString())) {
             throw new org.springframework.security.access.AccessDeniedException("Not your internship");
         }
 
         ApplicationStatus current = application.getStatus();
-        ApplicationStatus requested = request.getStatus();
+        ApplicationStatus next = request.getStatus();
 
         // Transition validation
-        boolean valid = false;
+        boolean isTransitionValid = switch (current) {
+            case APPLIED -> (next == ApplicationStatus.IN_REVIEW || next == ApplicationStatus.REJECTED);
+            case IN_REVIEW -> (next == ApplicationStatus.SHORTLISTED || next == ApplicationStatus.REJECTED);
+            case SHORTLISTED -> (next == ApplicationStatus.OFFERED || next == ApplicationStatus.REJECTED);
+            case OFFERED, REJECTED -> false; // Terminal states
+        };
 
-        if (current == ApplicationStatus.APPLIED &&
-                (requested == ApplicationStatus.SHORTLISTED ||
-                        requested == ApplicationStatus.REJECTED)) {
-            valid = true;
+        if (!isTransitionValid) {
+            throw new IllegalStateException("Invalid status transition from " + current + " to " + next);
         }
 
-        if (current == ApplicationStatus.SHORTLISTED &&
-                requested == ApplicationStatus.REJECTED) {
-            valid = true;
-        }
-
-        if (!valid) {
-            throw new IllegalStateException("Invalid status transition");
-        }
-
-        application.setStatus(requested);
+        application.setStatus(next);
         application.setUpdatedAt(java.time.LocalDateTime.now());
 
         applicationRepository.save(application);
@@ -166,10 +181,9 @@ public class ApplicationService {
         ApplicationStatusHistory history = new ApplicationStatusHistory();
         history.setApplication(application);
         history.setPreviousStatus(current.name());
-        history.setNewStatus(requested.name());
+        history.setNewStatus(next.name());
         history.setChangedBy(recruiter);
-        history.setChangedAt(java.time.LocalDateTime.now());
-
+        history.setChangedAt(LocalDateTime.now());
         historyRepository.save(history);
     }
 }

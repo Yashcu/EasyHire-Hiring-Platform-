@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -42,9 +43,11 @@ public class InternshipController {
     @GetMapping
     public ResponseEntity<?> search(
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) InternshipStatus status,
+            @RequestParam(required = false) List<InternshipStatus> status,
             @RequestParam(required = false) InternshipType type,
             @RequestParam(required = false) String location,
+            @RequestParam(required = false) BigDecimal minStipend,
+            @RequestParam(required = false) BigDecimal maxStipend,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -57,6 +60,8 @@ public class InternshipController {
                         status,
                         type,
                         location,
+                        minStipend,
+                        maxStipend,
                         page,
                         size,
                         sortBy,

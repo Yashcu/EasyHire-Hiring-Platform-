@@ -18,6 +18,10 @@ public class Internship {
     @JoinColumn(name = "recruiter_id", nullable = false)
     private User recruiter;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id")
+    private Company company;
+
     @Column(nullable = false)
     private String title;
 
@@ -133,5 +137,13 @@ public class Internship {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Company getCompany(){
+        return company;
+    }
+
+    public void setCompany(Company company){
+        this.company = company;
     }
 }

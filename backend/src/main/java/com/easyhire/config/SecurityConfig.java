@@ -58,7 +58,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/v1/auth/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/api/v1/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/api/v1/test").permitAll()
                         .requestMatchers("/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/internships/**").permitAll()
 
@@ -67,6 +67,8 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.GET, "/api/v1/applications/me")
                         .hasRole("CANDIDATE")
+
+                        .requestMatchers("/api/v1/profile/**").hasRole("CANDIDATE")
 
                         // Recruiter endpoints
                         .requestMatchers(HttpMethod.POST, "/api/v1/internships")

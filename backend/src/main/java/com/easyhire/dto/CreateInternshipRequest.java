@@ -4,6 +4,7 @@ import com.easyhire.entity.InternshipType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import java.util.UUID;
 
 public class CreateInternshipRequest {
 
@@ -19,8 +20,18 @@ public class CreateInternshipRequest {
     private BigDecimal stipendMin;
     private BigDecimal stipendMax;
 
+    private UUID companyId;
+
     @NotNull
     private InternshipType type;
+
+    public UUID getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(UUID companyId) {
+        this.companyId = companyId;
+    }
 
     public String getTitle() {
         return title;

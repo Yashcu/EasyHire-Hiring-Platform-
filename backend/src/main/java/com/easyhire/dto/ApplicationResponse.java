@@ -7,11 +7,38 @@ import java.util.UUID;
 
 public class ApplicationResponse {
 
+    private String candidateName;
+    private String candidateEmail;
+    private String resumeUrl;
     private UUID applicationId;
     private UUID internshipId;
     private String internshipTitle;
     private ApplicationStatus status;
     private LocalDateTime appliedAt;
+
+    public String getCandidateName() {
+        return candidateName;
+    }
+
+    public void setCandidateName(String candidateName) {
+        this.candidateName = candidateName;
+    }
+
+    public String getCandidateEmail() {
+        return candidateEmail;
+    }
+
+    public void setCandidateEmail(String candidateEmail) {
+        this.candidateEmail = candidateEmail;
+    }
+
+    public String getResumeUrl() {
+        return resumeUrl;
+    }
+
+    public void setResumeUrl(String resumeUrl) {
+        this.resumeUrl = resumeUrl;
+    }
 
     public UUID getApplicationId() {
         return applicationId;

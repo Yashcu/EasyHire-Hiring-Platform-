@@ -16,6 +16,34 @@ public class InternshipResponse {
     private BigDecimal stipendMax;
     private InternshipType type;
     private InternshipStatus status;
+    private String companyName;
+
+    public String getCompanyName() {
+        return companyName;
+    }
+
+    public void setCompanyName(String companyName) {
+        this.companyName = companyName;
+    }
+
+    public String getCompanyLogoUrl() {
+        return companyLogoUrl;
+    }
+
+    public void setCompanyLogoUrl(String companyLogoUrl) {
+        this.companyLogoUrl = companyLogoUrl;
+    }
+
+    public UUID getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(UUID companyId) {
+        this.companyId = companyId;
+    }
+
+    private String companyLogoUrl;
+    private UUID companyId;
 
     public UUID getId() {
         return id;
