@@ -1,6 +1,7 @@
 package com.easyhire.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -40,6 +41,7 @@ public class CandidateProfile {
     @Column(name = "default_resume_url")
     private String defaultResumeUrl;
 
+    @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 

@@ -1,6 +1,7 @@
 package com.easyhire.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -27,7 +28,8 @@ public class ApplicationStatusHistory {
     @JoinColumn(name = "changed_by")
     private User changedBy;
 
-    @Column(name = "changed_at")
+    @CreationTimestamp
+    @Column(name = "changed_at", updatable = false)
     private LocalDateTime changedAt;
 
     public UUID getId() {

@@ -1,6 +1,8 @@
 package com.easyhire.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -28,9 +30,11 @@ public class Application {
     @Column(name = "applied_resume_url", nullable = false)
     private String appliedResumeUrl;
 
-    @Column(name = "applied_at")
+    @CreationTimestamp
+    @Column(name = "applied_at", updatable = false)
     private LocalDateTime appliedAt;
 
+    @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
