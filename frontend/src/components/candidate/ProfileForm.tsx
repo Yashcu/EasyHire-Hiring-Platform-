@@ -4,12 +4,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import type { CandidateProfile } from "@/types";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { User, ArrowRight } from "lucide-react";
+import { ArrowRight, Github, Briefcase, FileText, User } from "lucide-react";
 
 export function ProfileForm() {
     const queryClient = useQueryClient();
@@ -40,92 +40,127 @@ export function ProfileForm() {
 
     if (isLoading) {
         return (
-            <div className="max-w-3xl space-y-4">
-                {[...Array(6)].map((_, i) => (
-                    <div key={i} className="h-14 rounded-xl bg-muted/50 animate-pulse" />
-                ))}
+            <div className="max-w-4xl mx-auto space-y-8 animate-pulse pb-16">
+                <Card className="h-[600px] w-full bg-muted/20 border-border/40 rounded-2xl" />
             </div>
         );
     }
 
     return (
-        <Card className="max-w-3xl border-border/50 shadow-apple rounded-2xl">
-            <CardHeader className="pb-2">
-                <div className="flex items-center gap-3 mb-1">
-                    <div className="h-10 w-10 rounded-xl bg-primary/8 flex items-center justify-center">
-                        <User className="h-5 w-5 text-primary/70" strokeWidth={1.8} />
-                    </div>
-                    <div>
-                        <CardTitle className="text-xl font-bold tracking-tight">Professional Profile</CardTitle>
-                        <CardDescription className="text-[13px]">Keep your details updated for faster applications.</CardDescription>
-                    </div>
-                </div>
-            </CardHeader>
-            <CardContent className="pt-4">
-                <form onSubmit={form.handleSubmit((data) => updateMutation.mutate(data))} className="space-y-5">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label className="text-sm font-medium">First Name</Label>
-                            <Input {...form.register("firstName")} required className="h-11 rounded-xl bg-muted/50 border-border/60" />
+        <div className="max-w-4xl mx-auto pb-16">
+            <div className="mb-6 md:mb-8">
+                <h2 className="text-2xl font-bold tracking-tight text-foreground">Profile Settings</h2>
+                <p className="text-muted-foreground mt-1 text-[15px]">Manage your public professional profile to stand out to recruiters.</p>
+            </div>
+
+            <form onSubmit={form.handleSubmit((data) => updateMutation.mutate(data))}>
+                <Card className="shadow-sm border-border/50 rounded-2xl overflow-hidden bg-card">
+                    <CardContent className="p-6 md:p-8 space-y-10">
+                        {/* Personal Details Section */}
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-3 border-b border-border/40 pb-4">
+                                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                                    <User className="h-5 w-5 text-primary" strokeWidth={2} />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-semibold text-foreground tracking-tight">Personal Details</h3>
+                                    <p className="text-sm text-muted-foreground">This info will be visible to recruiters when you apply.</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div className="space-y-2.5">
+                                    <Label className="text-[13px] font-semibold text-foreground/80">First Name</Label>
+                                    <Input {...form.register("firstName")} required className="h-12 rounded-xl bg-muted/40 border-border/60 focus-visible:ring-primary/25 shadow-sm text-sm" />
+                                </div>
+                                <div className="space-y-2.5">
+                                    <Label className="text-[13px] font-semibold text-foreground/80">Last Name</Label>
+                                    <Input {...form.register("lastName")} required className="h-12 rounded-xl bg-muted/40 border-border/60 focus-visible:ring-primary/25 shadow-sm text-sm" />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2.5">
+                                <Label className="text-[13px] font-semibold text-foreground/80">University / College</Label>
+                                <Input {...form.register("university")} placeholder="e.g. IIT Bombay" className="h-12 rounded-xl bg-muted/40 border-border/60 focus-visible:ring-primary/25 shadow-sm text-sm" />
+                            </div>
+
+                            <div className="space-y-2.5">
+                                <Label className="text-[13px] font-semibold text-foreground/80">Bio</Label>
+                                <Textarea {...form.register("bio")} rows={4} placeholder="Tell recruiters about yourself..." className="rounded-xl bg-muted/40 border-border/60 focus-visible:ring-primary/25 shadow-sm resize-y text-sm" />
+                            </div>
+
+                            <div className="space-y-2.5">
+                                <Label className="text-[13px] font-semibold text-foreground/80">Skills</Label>
+                                <Input {...form.register("skills")} placeholder="e.g. React, Java, Spring Boot, Figma" className="h-12 rounded-xl bg-muted/40 border-border/60 focus-visible:ring-primary/25 shadow-sm text-sm" />
+                                <p className="text-[12px] text-muted-foreground/80 font-medium">Separate skills with commas.</p>
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label className="text-sm font-medium">Last Name</Label>
-                            <Input {...form.register("lastName")} required className="h-11 rounded-xl bg-muted/50 border-border/60" />
+
+                        {/* Professional Links Section */}
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-3 border-b border-border/40 pb-4">
+                                <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
+                                    <Briefcase className="h-5 w-5 text-emerald-600 dark:text-emerald-400" strokeWidth={2} />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-semibold text-foreground tracking-tight">Professional Links</h3>
+                                    <p className="text-sm text-muted-foreground">Showcase your work and attach a unified resume.</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div className="space-y-2.5">
+                                    <Label className="text-[13px] font-semibold text-foreground/80 flex items-center gap-2">
+                                        <Github className="h-4 w-4 text-muted-foreground" />
+                                        GitHub URL
+                                    </Label>
+                                    <Input type="url" {...form.register("githubUrl")} placeholder="https://github.com/..." className="h-12 rounded-xl bg-muted/40 border-border/60 focus-visible:ring-primary/25 shadow-sm text-sm" />
+                                </div>
+                                <div className="space-y-2.5">
+                                    <Label className="text-[13px] font-semibold text-foreground/80 flex items-center gap-2">
+                                        <Briefcase className="h-4 w-4 text-muted-foreground" />
+                                        Portfolio URL
+                                    </Label>
+                                    <Input type="url" {...form.register("portfolioUrl")} placeholder="https://..." className="h-12 rounded-xl bg-muted/40 border-border/60 focus-visible:ring-primary/25 shadow-sm text-sm" />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2.5 pt-2">
+                                <Label className="text-[13px] font-semibold text-foreground/80 flex items-center gap-2">
+                                    <FileText className="h-4 w-4 text-muted-foreground" />
+                                    Default Resume URL
+                                </Label>
+                                <Input type="url" {...form.register("defaultResumeUrl")} placeholder="Google Drive / PDF link" className="h-12 rounded-xl bg-muted/40 border-border/60 focus-visible:ring-primary/25 shadow-sm text-sm" />
+                                <p className="text-[12px] text-muted-foreground/80 font-medium">Ensure your link permissions are set to "Anyone with the link can view".</p>
+                            </div>
                         </div>
-                    </div>
+                    </CardContent>
 
-                    <div className="space-y-2">
-                        <Label className="text-sm font-medium">University</Label>
-                        <Input {...form.register("university")} placeholder="e.g. IIT Bombay" className="h-11 rounded-xl bg-muted/50 border-border/60" />
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label className="text-sm font-medium">Bio</Label>
-                        <Textarea {...form.register("bio")} rows={3} placeholder="Tell recruiters about yourself..." className="rounded-xl bg-muted/50 border-border/60" />
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label className="text-sm font-medium">Skills</Label>
-                        <Input {...form.register("skills")} placeholder="React, Java, Spring Boot" className="h-11 rounded-xl bg-muted/50 border-border/60" />
-                        <p className="text-xs text-muted-foreground/60">Separate skills with commas.</p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label className="text-sm font-medium">GitHub URL</Label>
-                            <Input type="url" {...form.register("githubUrl")} placeholder="https://github.com/..." className="h-11 rounded-xl bg-muted/50 border-border/60" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label className="text-sm font-medium">Portfolio URL</Label>
-                            <Input type="url" {...form.register("portfolioUrl")} placeholder="https://..." className="h-11 rounded-xl bg-muted/50 border-border/60" />
-                        </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label className="text-sm font-medium">Default Resume URL</Label>
-                        <Input type="url" {...form.register("defaultResumeUrl")} placeholder="Google Drive / PDF link" className="h-11 rounded-xl bg-muted/50 border-border/60" />
-                        <p className="text-xs text-muted-foreground/60">This will be auto-filled when you apply to jobs.</p>
-                    </div>
-
-                    <Button
-                        type="submit"
-                        className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-apple btn-press font-semibold"
-                        disabled={updateMutation.isPending}
-                    >
-                        {updateMutation.isPending ? (
-                            <span className="flex items-center gap-2">
-                                <span className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                                Saving...
-                            </span>
-                        ) : (
-                            <span className="flex items-center gap-2">
-                                Save Profile
-                                <ArrowRight className="h-4 w-4" />
-                            </span>
-                        )}
-                    </Button>
-                </form>
-            </CardContent>
-        </Card>
+                    <CardFooter className="bg-muted/30 border-t border-border/50 p-6 md:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <p className="text-[13px] text-muted-foreground font-medium hidden sm:block">
+                            Review your details before saving.
+                        </p>
+                        <Button
+                            type="submit"
+                            size="lg"
+                            className="w-full sm:w-auto h-11 bg-primary hover:bg-primary/95 text-primary-foreground rounded-xl shadow-apple btn-press font-semibold text-[14px]"
+                            disabled={updateMutation.isPending}
+                        >
+                            {updateMutation.isPending ? (
+                                <span className="flex items-center gap-2">
+                                    <span className="h-4 w-4 border-[1.5px] border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                                    Saving...
+                                </span>
+                            ) : (
+                                <span className="flex items-center gap-2">
+                                    Save Changes
+                                    <ArrowRight className="h-4 w-4" />
+                                </span>
+                            )}
+                        </Button>
+                    </CardFooter>
+                </Card>
+            </form>
+        </div>
     );
 }

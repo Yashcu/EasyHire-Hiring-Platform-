@@ -7,10 +7,19 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { EditJobModal } from "./EditJobModal";
+import { getJobStatusBadge } from "@/utils/status";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 import { MapPin, Users, MoreVertical, Edit, XCircle, Archive, Inbox } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -27,6 +36,7 @@ export function MyPostings() {
     const [view, setView] = useState("ACTIVE");
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [selectedJob, setSelectedJob] = useState<Internship | null>(null);
+    const [dialogJobToClose, setDialogJobToClose] = useState<string | null>(null);
 
     const handleEditClick = (job: Internship) => {
         setSelectedJob(job);
@@ -54,28 +64,6 @@ export function MyPostings() {
             toast.error("Failed to close job. Please try again.");
         }
     });
-
-    const updateJobMutation = useMutation({
-        mutationFn: async ({ jobId, data }: { jobId: string; data: any }) => {
-            await api.put(`/internships/${jobId}`, data);
-        },
-        onSuccess: () => {
-            toast.success("Job details updated successfully!");
-            queryClient.invalidateQueries({ queryKey: ['internships', 'recruiter'] });
-            setEditModalOpen(false);
-        },
-        onError: () => {
-            toast.error("Failed to update job details.");
-        }
-    });
-
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'OPEN': return "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-800/50";
-            case 'CLOSED': return "bg-red-500/10 text-red-700 dark:text-red-400 border-red-200/50 dark:border-red-800/50";
-            default: return "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200/50 dark:border-amber-800/50";
-        }
-    };
 
     if (isLoading) {
         return (
@@ -127,7 +115,7 @@ export function MyPostings() {
                                         {job.title}
                                     </h3>
                                     <div className="flex items-center gap-2 shrink-0">
-                                        <Badge variant="outline" className={`text-xs font-medium rounded-lg px-2.5 py-0.5 ${getStatusBadge(job.status)}`}>
+                                        <Badge variant="outline" className={`text-xs font-medium rounded-lg px-2.5 py-0.5 ${getJobStatusBadge(job.status)}`}>
                                             {job.status}
                                         </Badge>
                                         {job.status !== 'CLOSED' && (
@@ -143,8 +131,7 @@ export function MyPostings() {
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem
                                                         className="text-destructive focus:text-destructive focus:bg-destructive/8 rounded-lg cursor-pointer"
-                                                        onClick={() => closeJobMutation.mutate(job.id)}
-                                                        disabled={closeJobMutation.isPending}
+                                                        onClick={() => setDialogJobToClose(job.id)}
                                                     >
                                                         <XCircle className="mr-2 h-4 w-4" /> Close & Archive
                                                     </DropdownMenuItem>
@@ -188,85 +175,39 @@ export function MyPostings() {
             )}
 
             {/* Edit Job Modal */}
-            <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
-                <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border-border/60">
-                    <DialogHeader>
-                        <DialogTitle className="text-xl font-bold tracking-tight">Edit Internship Details</DialogTitle>
-                    </DialogHeader>
-                    {selectedJob && (
-                        <div className="pt-4">
-                            <form
-                                onSubmit={(e) => {
-                                    e.preventDefault();
-                                    const formData = new FormData(e.currentTarget);
-                                    const updatedData = {
-                                        title: formData.get("title"),
-                                        description: formData.get("description"),
-                                        location: formData.get("location"),
-                                        type: formData.get("type"),
-                                        stipendMin: Number(formData.get("stipendMin")) || undefined,
-                                        stipendMax: Number(formData.get("stipendMax")) || undefined,
-                                    };
-                                    updateJobMutation.mutate({ jobId: selectedJob.id, data: updatedData });
-                                }}
-                                className="space-y-5"
-                            >
-                                <div className="space-y-2">
-                                    <Label className="text-sm font-medium">Internship Title</Label>
-                                    <Input name="title" defaultValue={selectedJob.title} required className="h-11 rounded-xl bg-muted/50 border-border/60" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-sm font-medium">Description</Label>
-                                    <Textarea name="description" defaultValue={selectedJob.description} rows={5} required className="rounded-xl bg-muted/50 border-border/60" />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label className="text-sm font-medium">Location</Label>
-                                        <Input name="location" defaultValue={selectedJob.location} required className="h-11 rounded-xl bg-muted/50 border-border/60" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-sm font-medium">Type</Label>
-                                        <select
-                                            name="type"
-                                            defaultValue={selectedJob.type}
-                                            className="flex h-11 w-full rounded-xl border border-border/60 bg-muted/50 text-foreground px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
-                                        >
-                                            <option value="REMOTE">Remote</option>
-                                            <option value="HYBRID">Hybrid</option>
-                                            <option value="ONSITE">On-site</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label className="text-sm font-medium">Min Stipend (₹/mo)</Label>
-                                        <Input name="stipendMin" type="number" defaultValue={selectedJob.stipendMin} className="h-11 rounded-xl bg-muted/50 border-border/60" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-sm font-medium">Max Stipend (₹/mo)</Label>
-                                        <Input name="stipendMax" type="number" defaultValue={selectedJob.stipendMax} className="h-11 rounded-xl bg-muted/50 border-border/60" />
-                                    </div>
-                                </div>
-                                <div className="flex justify-end gap-3 pt-4 border-t border-border/40">
-                                    <Button type="button" variant="outline" className="rounded-xl btn-press" onClick={() => setEditModalOpen(false)}>Cancel</Button>
-                                    <Button
-                                        type="submit"
-                                        className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-apple btn-press font-semibold"
-                                        disabled={updateJobMutation.isPending}
-                                    >
-                                        {updateJobMutation.isPending ? (
-                                            <span className="flex items-center gap-2">
-                                                <span className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                                                Saving...
-                                            </span>
-                                        ) : "Save Changes"}
-                                    </Button>
-                                </div>
-                            </form>
-                        </div>
-                    )}
-                </DialogContent>
-            </Dialog>
+            <EditJobModal
+                job={selectedJob}
+                open={editModalOpen}
+                onOpenChange={setEditModalOpen}
+            />
+
+            {/* Alert Dialog for Close action */}
+            <AlertDialog open={!!dialogJobToClose} onOpenChange={(open) => {
+                if (!open) setDialogJobToClose(null);
+            }}>
+                <AlertDialogContent className="rounded-2xl border-border/60">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will close the internship posting and move it to your archive. You will no longer receive new applications for this title.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="mt-4">
+                        <AlertDialogCancel className="rounded-xl btn-press">Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="rounded-xl bg-destructive hover:bg-destructive/90 text-destructive-foreground shadow-apple btn-press"
+                            onClick={() => {
+                                if (dialogJobToClose) {
+                                    closeJobMutation.mutate(dialogJobToClose);
+                                }
+                                setDialogJobToClose(null);
+                            }}
+                        >
+                            Close & Archive
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

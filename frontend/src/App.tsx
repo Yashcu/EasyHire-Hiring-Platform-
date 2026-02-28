@@ -25,11 +25,15 @@ function App() {
             {/* 🔒 Protected Candidate Routes */}
             <Route element={<ProtectedRoute allowedRole="CANDIDATE" />}>
               <Route path="/candidate" element={<CandidateDashboard />} />
+              <Route path="/candidate/applications" element={<CandidateDashboard />} />
+              <Route path="/candidate/profile" element={<CandidateDashboard />} />
             </Route>
 
             {/* 🔒 Protected Recruiter Routes */}
             <Route element={<ProtectedRoute allowedRole="RECRUITER" />}>
               <Route path="/recruiter" element={<RecruiterDashboard />} />
+              <Route path="/recruiter/new" element={<RecruiterDashboard />} />
+              <Route path="/recruiter/settings" element={<RecruiterDashboard />} />
               <Route path="/recruiter/internships/:jobId/applicants" element={<JobApplicants />} />
             </Route>
 

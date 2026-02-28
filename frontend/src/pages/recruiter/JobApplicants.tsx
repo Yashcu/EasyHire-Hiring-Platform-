@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
+import { getApplicationStatusConfig } from "@/utils/status";
+import { AxiosError } from "axios";
 
 export function JobApplicants() {
     const { jobId } = useParams();
@@ -42,7 +44,7 @@ export function JobApplicants() {
 
             return { previousApplicants };
         },
-        onError: (error: any, _, context) => {
+        onError: (error: AxiosError | any, _, context) => {
             queryClient.setQueryData(['applicants', jobId], context?.previousApplicants);
             toast.error(error.response?.data?.message || "Invalid status transition");
         },
@@ -58,15 +60,7 @@ export function JobApplicants() {
         updateStatusMutation.mutate({ applicationId, status: newStatus });
     };
 
-    const getStatusStyle = (status: string) => {
-        switch (status) {
-            case 'OFFERED': return "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-800/50";
-            case 'REJECTED': return "bg-red-500/10 text-red-700 dark:text-red-400 border-red-200/50 dark:border-red-800/50";
-            case 'SHORTLISTED': return "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-200/50 dark:border-purple-800/50";
-            case 'IN_REVIEW': return "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200/50 dark:border-amber-800/50";
-            default: return "bg-muted text-muted-foreground border-border/50";
-        }
-    };
+
 
     if (isLoading) {
         return (
@@ -91,88 +85,90 @@ export function JobApplicants() {
             </div>
 
             <div className="bg-card border border-border/50 rounded-2xl shadow-apple overflow-hidden animate-fade-in-up delay-100">
-                <Table>
-                    <TableHeader>
-                        <TableRow className="bg-muted/40 border-b border-border/50 hover:bg-muted/40">
-                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground py-3.5">Candidate</TableHead>
-                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground py-3.5">Applied On</TableHead>
-                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground py-3.5">Resume</TableHead>
-                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground py-3.5">Status</TableHead>
-                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground py-3.5">Action</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {data?.content.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={5} className="text-center py-16">
-                                    <Inbox className="h-10 w-10 text-muted-foreground/25 mx-auto mb-3" />
-                                    <p className="text-base font-medium text-muted-foreground">No applicants yet</p>
-                                    <p className="text-sm text-muted-foreground/60 mt-1">Applicants will appear here once they apply.</p>
-                                </TableCell>
+                <div className="overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="bg-muted/40 border-b border-border/50 hover:bg-muted/40 whitespace-nowrap">
+                                <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground py-3.5">Candidate</TableHead>
+                                <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground py-3.5">Applied On</TableHead>
+                                <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground py-3.5">Resume</TableHead>
+                                <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground py-3.5">Status</TableHead>
+                                <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground py-3.5 min-w-[150px]">Action</TableHead>
                             </TableRow>
-                        ) : (
-                            data?.content.map((app: any) => (
-                                <TableRow key={app.applicationId} className="border-b border-border/30 hover:bg-muted/20 transition-colors">
-                                    <TableCell className="py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary">
-                                                {(app.candidateName || "C")[0].toUpperCase()}
-                                            </div>
-                                            <div>
-                                                <p className="font-medium text-sm text-foreground">{app.candidateName || "Candidate"}</p>
-                                                <p className="text-xs text-muted-foreground">{app.candidateEmail || "Hidden Email"}</p>
-                                            </div>
-                                        </div>
-                                    </TableCell>
-
-                                    <TableCell className="text-sm text-muted-foreground">
-                                        {format(new Date(app.appliedAt), 'MMM dd, yyyy')}
-                                    </TableCell>
-
-                                    <TableCell>
-                                        {app.resumeUrl ? (
-                                            <a
-                                                href={app.resumeUrl}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 font-medium transition-colors"
-                                            >
-                                                View Resume <ExternalLink className="h-3 w-3" />
-                                            </a>
-                                        ) : (
-                                            <span className="text-sm text-muted-foreground/50">No resume</span>
-                                        )}
-                                    </TableCell>
-
-                                    <TableCell>
-                                        <Badge variant="outline" className={`text-xs font-medium rounded-lg px-2.5 py-0.5 border ${getStatusStyle(app.status)}`}>
-                                            {app.status.replace('_', ' ')}
-                                        </Badge>
-                                    </TableCell>
-
-                                    <TableCell>
-                                        <Select
-                                            defaultValue={app.status}
-                                            onValueChange={(val) => handleStatusChange(app.applicationId, val)}
-                                            disabled={app.status === 'OFFERED' || app.status === 'REJECTED'}
-                                        >
-                                            <SelectTrigger className="w-[140px] h-8 text-xs rounded-lg border-border/60">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-xl shadow-apple-lg border-border/60">
-                                                <SelectItem value="APPLIED" className="rounded-lg text-xs">Applied</SelectItem>
-                                                <SelectItem value="IN_REVIEW" className="rounded-lg text-xs">In Review</SelectItem>
-                                                <SelectItem value="SHORTLISTED" className="rounded-lg text-xs">Shortlisted</SelectItem>
-                                                <SelectItem value="OFFERED" className="rounded-lg text-xs">Offered</SelectItem>
-                                                <SelectItem value="REJECTED" className="rounded-lg text-xs">Rejected</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                        </TableHeader>
+                        <TableBody>
+                            {data?.content.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="text-center py-16">
+                                        <Inbox className="h-10 w-10 text-muted-foreground/25 mx-auto mb-3" />
+                                        <p className="text-base font-medium text-muted-foreground">No applicants yet</p>
+                                        <p className="text-sm text-muted-foreground/60 mt-1">Applicants will appear here once they apply.</p>
                                     </TableCell>
                                 </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
+                            ) : (
+                                data?.content.map((app: any) => (
+                                    <TableRow key={app.applicationId} className="border-b border-border/30 hover:bg-muted/20 transition-colors whitespace-nowrap">
+                                        <TableCell className="py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-9 w-9 rounded-full bg-muted/30 border border-border/50 shadow-sm flex items-center justify-center overflow-hidden shrink-0">
+                                                    <img src={`https://api.dicebear.com/9.x/notionists/svg?seed=${app.candidateName || 'Candidate'}&backgroundColor=transparent`} alt="" className="h-full w-full object-cover" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium text-sm text-foreground">{app.candidateName || "Candidate"}</p>
+                                                    <p className="text-xs text-muted-foreground">{app.candidateEmail || "Hidden Email"}</p>
+                                                </div>
+                                            </div>
+                                        </TableCell>
+
+                                        <TableCell className="text-sm text-muted-foreground">
+                                            {format(new Date(app.appliedAt), 'MMM dd, yyyy')}
+                                        </TableCell>
+
+                                        <TableCell>
+                                            {app.resumeUrl ? (
+                                                <a
+                                                    href={app.resumeUrl}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 font-medium transition-colors"
+                                                >
+                                                    View Resume <ExternalLink className="h-3 w-3" />
+                                                </a>
+                                            ) : (
+                                                <span className="text-sm text-muted-foreground/50">No resume</span>
+                                            )}
+                                        </TableCell>
+
+                                        <TableCell>
+                                            <Badge variant="outline" className={`text-xs font-medium rounded-lg px-2.5 py-0.5 border ${getApplicationStatusConfig(app.status).style}`}>
+                                                {getApplicationStatusConfig(app.status).label}
+                                            </Badge>
+                                        </TableCell>
+
+                                        <TableCell>
+                                            <Select
+                                                defaultValue={app.status}
+                                                onValueChange={(val) => handleStatusChange(app.applicationId, val)}
+                                                disabled={app.status === 'OFFERED' || app.status === 'REJECTED'}
+                                            >
+                                                <SelectTrigger className="w-[140px] h-8 text-xs rounded-lg border-border/60">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-xl shadow-apple-lg border-border/60">
+                                                    <SelectItem value="APPLIED" className="rounded-lg text-xs">Applied</SelectItem>
+                                                    <SelectItem value="IN_REVIEW" className="rounded-lg text-xs">In Review</SelectItem>
+                                                    <SelectItem value="SHORTLISTED" className="rounded-lg text-xs">Shortlisted</SelectItem>
+                                                    <SelectItem value="OFFERED" className="rounded-lg text-xs">Offered</SelectItem>
+                                                    <SelectItem value="REJECTED" className="rounded-lg text-xs">Rejected</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
             </div>
         </div>
     );

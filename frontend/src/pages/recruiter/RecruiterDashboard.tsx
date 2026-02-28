@@ -1,15 +1,21 @@
-import { useState } from "react";
+
 import { useQuery } from "@tanstack/react-query";
 import { Briefcase, Users, Activity } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Internship, PaginatedResponse } from "@/types";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { useLocation, useNavigate } from "react-router-dom";
 import { PostJobForm } from "@/components/recruiter/PostJobForm";
 import { MyPostings } from "@/components/recruiter/MyPostings";
 import { CompanySettings } from "@/components/recruiter/CompanySettings";
 
 export function RecruiterDashboard() {
-    const [activeTab, setActiveTab] = useState("postings");
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    let activeTab = "postings";
+    if (location.pathname === "/recruiter/new") activeTab = "new";
+    if (location.pathname === "/recruiter/settings") activeTab = "settings";
 
     const { data } = useQuery<PaginatedResponse<Internship>>({
         queryKey: ['internships', 'recruiter'],
@@ -81,27 +87,15 @@ export function RecruiterDashboard() {
                 ))}
             </div>
 
-            {/* Tabs */}
+            {/* Tabs Content */}
             <div className="animate-fade-in-up delay-200">
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="inline-flex h-11 p-1 bg-muted/60 border border-border/40 rounded-xl mb-8">
-                        <TabsTrigger value="postings" className="rounded-lg px-5 text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-apple">
-                            My Postings
-                        </TabsTrigger>
-                        <TabsTrigger value="new" className="rounded-lg px-5 text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-apple">
-                            Post a Job
-                        </TabsTrigger>
-                        <TabsTrigger value="settings" className="rounded-lg px-5 text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-apple">
-                            Company
-                        </TabsTrigger>
-                    </TabsList>
-
+                <Tabs value={activeTab} className="w-full">
                     <TabsContent value="postings">
                         <MyPostings />
                     </TabsContent>
 
                     <TabsContent value="new">
-                        <PostJobForm onSuccess={() => setActiveTab("postings")} />
+                        <PostJobForm onSuccess={() => navigate("/recruiter")} />
                     </TabsContent>
 
                     <TabsContent value="settings">

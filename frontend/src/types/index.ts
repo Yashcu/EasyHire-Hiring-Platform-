@@ -32,6 +32,8 @@ export interface Application {
     internshipTitle: string;
     status: 'APPLIED' | 'IN_REVIEW' | 'SHORTLISTED' | 'REJECTED' | 'OFFERED';
     appliedAt: string;
+    companyName?: string;
+    resumeUrl?: string;
 }
 
 export interface CandidateProfile {
